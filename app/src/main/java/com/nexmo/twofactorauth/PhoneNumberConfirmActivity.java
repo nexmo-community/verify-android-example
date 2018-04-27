@@ -34,6 +34,12 @@ public class PhoneNumberConfirmActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_phone_number_confirm);
+        SharedPreferences sharedPref = getSharedPreferences(TWO_FACTOR_AUTH, Context.MODE_PRIVATE);
+
+        String phoneNumber = sharedPref.getString(PHONE_NUMBER, null);
+        Log.d(TAG, "phone: " + phoneNumber);
+        requestId = sharedPref.getString(phoneNumber, null);
+        Log.d(TAG, "request id: " + requestId);
 
         codeTxt = findViewById(R.id.code_txt);
         TextView phoneTxt = findViewById(R.id.phone_txt);
@@ -54,14 +60,55 @@ public class PhoneNumberConfirmActivity extends AppCompatActivity {
                 cancelRequest();
             }
         });
+
+        phoneTxt.setText(phoneNumber);
+        verifyTxt.setText(null);
     }
 
 
     private void confirmCode(int code) {
+        verifyTxt.setText(null);
+        VerifyUtil.getInstance().getVerifyService().check(new VerifyRequest(code, requestId)).enqueue(new Callback<CheckVerifyResponse>() {
+            @Override
+            public void onResponse(Call<CheckVerifyResponse> call, Response<CheckVerifyResponse> response) {
+                if (response.code() > 200) {
+                    CheckVerifyResponse checkVerifyResponse = response.body();
+                    verifyTxt.setText(checkVerifyResponse.getErrorText());
+                    Toast.makeText(PhoneNumberConfirmActivity.this, "Error Will Robinson!", Toast.LENGTH_LONG).show();
+                } else {
+                    verifyTxt.setText("Verified!");
+                    Toast.makeText(PhoneNumberConfirmActivity.this, "Verified!", Toast.LENGTH_LONG).show();
+                }
+            }
 
+            @Override
+            public void onFailure(Call<CheckVerifyResponse> call, Throwable t) {
+              Toast.makeText(PhoneNumberConfirmActivity.this, "Error Will Robinson!", Toast.LENGTH_LONG).show();
+              Log.e(TAG, "onFailure: ", t);
+            }
+      });
     }
 
     private void cancelRequest() {
+        verifyTxt.setText(null);
+        VerifyUtil.getInstance().getVerifyService().cancel(new RequestId(requestId)).enqueue(new Callback<CancelVerifyResponse>() {
+            @Override
+            public void onResponse(Call<CancelVerifyResponse> call, Response<CancelVerifyResponse> response) {
+                if (response.code() > 200) {
+                    CancelVerifyResponse cancelVerifyResponse = response.body();
+                    verifyTxt.setText(cancelVerifyResponse.getErrorText());
+                    Toast.makeText(PhoneNumberConfirmActivity.this, "Error Will Robinson!", Toast.LENGTH_LONG).show();
+                } else {
+                    Toast.makeText(PhoneNumberConfirmActivity.this, "Cancelled!", Toast.LENGTH_LONG).show();
+                    finish();
+                }
+            }
 
+            @Override
+            public void onFailure(Call<CancelVerifyResponse> call, Throwable t) {
+                Toast.makeText(PhoneNumberConfirmActivity.this, "Error Will Robinson!", Toast.LENGTH_LONG).show();
+                Log.e(TAG, "onFailure: ", t);
+            }
+        });
     }
 }
