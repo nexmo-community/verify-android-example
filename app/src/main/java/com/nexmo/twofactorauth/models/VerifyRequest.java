@@ -1,19 +1,22 @@
 package com.nexmo.twofactorauth.models;
 
+import com.squareup.moshi.Json;
+
 public class VerifyRequest {
-    private int code;
+    private String code;
+    @Json(name = "request_id")
     private String requestId;
 
-    public VerifyRequest(int code, String requestId) {
+    public VerifyRequest(String code, String requestId) {
         this.code = code;
         this.requestId = requestId;
     }
 
-    public int getCode() {
+    public String getCode() {
         return code;
     }
 
-    public void setCode(int code) {
+    public void setCode(String code) {
         this.code = code;
     }
 

@@ -35,6 +35,12 @@
         android:layout_height="wrap_content"
         android:text="Sign in"/>
 
+    <Button
+        android:id="@+id/cancel_btn"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Cancel request"/>
+
     <TextView
         android:id="@+id/error_txt"
         android:layout_width="match_parent"

@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -17,8 +18,13 @@ import com.nexmo.twofactorauth.models.RequestId;
 import com.nexmo.twofactorauth.models.VerifyRequest;
 import com.nexmo.twofactorauth.utils.VerifyUtil;
 
+import java.io.IOException;
+import java.lang.annotation.Annotation;
+
+import okhttp3.ResponseBody;
 import retrofit2.Call;
 import retrofit2.Callback;
+import retrofit2.Converter;
 import retrofit2.Response;
 
 public class PhoneNumberConfirmActivity extends AppCompatActivity {
@@ -50,7 +56,7 @@ public class PhoneNumberConfirmActivity extends AppCompatActivity {
         confirmBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                confirmCode(Integer.parseInt(codeTxt.getText().toString()));
+                    confirmCode(codeTxt.getText().toString());
             }
         });
 
@@ -66,18 +72,23 @@ public class PhoneNumberConfirmActivity extends AppCompatActivity {
     }
 
 
-    private void confirmCode(int code) {
+    private void confirmCode(String code) {
         verifyTxt.setText(null);
         VerifyUtil.getInstance().getVerifyService().check(new VerifyRequest(code, requestId)).enqueue(new Callback<CheckVerifyResponse>() {
             @Override
             public void onResponse(Call<CheckVerifyResponse> call, Response<CheckVerifyResponse> response) {
-                if (response.code() > 200) {
-                    CheckVerifyResponse checkVerifyResponse = response.body();
-                    verifyTxt.setText(checkVerifyResponse.getErrorText());
-                    Toast.makeText(PhoneNumberConfirmActivity.this, "Error Will Robinson!", Toast.LENGTH_LONG).show();
-                } else {
+                if (response.isSuccessful()) {
                     verifyTxt.setText("Verified!");
                     Toast.makeText(PhoneNumberConfirmActivity.this, "Verified!", Toast.LENGTH_LONG).show();
+                } else {
+                    Converter<ResponseBody, CheckVerifyResponse> errorConverter = VerifyUtil.getInstance().getRetrofit().responseBodyConverter(CheckVerifyResponse.class, new Annotation[0]);
+                    try {
+                        CheckVerifyResponse checkVerifyResponse = errorConverter.convert(response.errorBody());
+                        verifyTxt.setText(checkVerifyResponse.getErrorText());
+                        Toast.makeText(PhoneNumberConfirmActivity.this, "Error Will Robinson!", Toast.LENGTH_LONG).show();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
                 }
             }
 
@@ -94,13 +105,18 @@ public class PhoneNumberConfirmActivity extends AppCompatActivity {
         VerifyUtil.getInstance().getVerifyService().cancel(new RequestId(requestId)).enqueue(new Callback<CancelVerifyResponse>() {
             @Override
             public void onResponse(Call<CancelVerifyResponse> call, Response<CancelVerifyResponse> response) {
-                if (response.code() > 200) {
-                    CancelVerifyResponse cancelVerifyResponse = response.body();
-                    verifyTxt.setText(cancelVerifyResponse.getErrorText());
-                    Toast.makeText(PhoneNumberConfirmActivity.this, "Error Will Robinson!", Toast.LENGTH_LONG).show();
-                } else {
+                if (response.isSuccessful()) {
                     Toast.makeText(PhoneNumberConfirmActivity.this, "Cancelled!", Toast.LENGTH_LONG).show();
                     finish();
+                } else {
+                    Converter<ResponseBody, CancelVerifyResponse> errorConverter = VerifyUtil.getInstance().getRetrofit().responseBodyConverter(CancelVerifyResponse.class, new Annotation[0]);
+                    try {
+                        CancelVerifyResponse cancelVerifyResponse = errorConverter.convert(response.errorBody());
+                        verifyTxt.setText(cancelVerifyResponse.getErrorText());
+                        Toast.makeText(PhoneNumberConfirmActivity.this, "Error Will Robinson!", Toast.LENGTH_LONG).show();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
                 }
             }
 
