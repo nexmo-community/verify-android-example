@@ -64,23 +64,28 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     private void start2FA(final String phone) {
+        //clear out the previous error (if any) that was shown.
         errorTxt.setText(null);
+        //start the verification request. Wrap `String phone` in a `PhoneNumber` class so it is correctly serialized into JSON
         Call<VerifyResponse> request = VerifyUtil.getInstance().getVerifyService().request(new PhoneNumber(phone));
         request.enqueue(new Callback<VerifyResponse>() {
             @Override
             public void onResponse(Call<VerifyResponse> call, Response<VerifyResponse> response) {
                 if (response.isSuccessful()) {
+                    //parse the response
                     VerifyResponse requestVerifyResponse = response.body();
                     storeResponse(phone, requestVerifyResponse);
                     startActivity(new Intent(LoginActivity.this, PhoneNumberConfirmActivity.class));
                 } else {
+                    //if the HTTP response is 4XX, Retrofit doesn't pass the response to the `response.body();`
+                    //So we need to convert the `response.errorBody()` to a `VerifyResponse`
                     Converter<ResponseBody, VerifyResponse> errorConverter = VerifyUtil.getInstance().getRetrofit().responseBodyConverter(VerifyResponse.class, new Annotation[0]);
                     try {
                         VerifyResponse verifyResponse = errorConverter.convert(response.errorBody());
                         Toast.makeText(LoginActivity.this, "Error Will Robinson!", Toast.LENGTH_LONG).show();
                         errorTxt.setText(verifyResponse.getErrorText());
                     } catch (IOException e) {
-                        e.printStackTrace();
+                        Log.e(TAG, "onResponse: ", e);
                     }
                 }
             }
@@ -93,22 +98,28 @@ public class LoginActivity extends AppCompatActivity {
         });
     }
 
+    //You may want to cancel the previous request without launching the PhoneNumberConfirmActivity
     private void cancelRequest(final String phone) {
+        //clear out the previous error (if any) that was shown.
         errorTxt.setText(null);
+        //The requestId needs to be sent in the request to cancel a verification. Wrap `String phone` in a `PhoneNumber` class so it is correctly serialized into JSON
         String requestId = sharedPref.getString(phone, null);
+        //Cancel the verification request
         VerifyUtil.getInstance().getVerifyService().cancel(new RequestId(requestId)).enqueue(new Callback<CancelVerifyResponse>() {
             @Override
             public void onResponse(Call<CancelVerifyResponse> call, Response<CancelVerifyResponse> response) {
                 if (response.isSuccessful()) {
                     Toast.makeText(LoginActivity.this, "Cancelled!", Toast.LENGTH_LONG).show();
                 } else {
+                    //if the HTTP response is 4XX, Retrofit doesn't pass the response to the `response.body();`
+                    //So we need to convert the `response.errorBody()` to a `CancelVerifyResponse`
                     Converter<ResponseBody, CancelVerifyResponse> errorConverter = VerifyUtil.getInstance().getRetrofit().responseBodyConverter(CancelVerifyResponse.class, new Annotation[0]);
                     try {
                         CancelVerifyResponse cancelVerifyResponse = errorConverter.convert(response.errorBody());
                         errorTxt.setText(cancelVerifyResponse.getErrorText());
                         Toast.makeText(LoginActivity.this, "Error Will Robinson!", Toast.LENGTH_LONG).show();
                     } catch (IOException e) {
-                        e.printStackTrace();
+                        Log.e(TAG, "onResponse: ", e);
                     }
                 }
             }
@@ -124,6 +135,7 @@ public class LoginActivity extends AppCompatActivity {
     private void storeResponse(String phone, VerifyResponse response) {
         SharedPreferences.Editor editor = sharedPref.edit();
         editor.putString(PHONE_NUMBER, phone);
+        //Don't store empty responseIds since we only keep a reference to one requestId at a time
         if (!TextUtils.isEmpty(response.getRequestId())) {
             editor.putString(phone, response.getRequestId());
         }

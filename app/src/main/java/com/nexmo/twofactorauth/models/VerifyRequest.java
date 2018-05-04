@@ -3,8 +3,10 @@ package com.nexmo.twofactorauth.models;
 import com.squareup.moshi.Json;
 
 public class VerifyRequest {
-    private String code;
+
+    //The Nexmo Verify API expects fields to be snake_cased let's convert them to camelCase when the JSON is parsed
     @Json(name = "request_id")
+    private String code;
     private String requestId;
 
     public VerifyRequest(String code, String requestId) {

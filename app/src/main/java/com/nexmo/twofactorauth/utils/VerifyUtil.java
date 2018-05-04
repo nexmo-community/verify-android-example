@@ -12,12 +12,14 @@ public class VerifyUtil {
     private static VerifyUtil instance = null;
 
     private VerifyUtil() {
+        //Use OkHttp for logging
         HttpLoggingInterceptor interceptor = new HttpLoggingInterceptor();
         interceptor.setLevel(HttpLoggingInterceptor.Level.BODY);
         OkHttpClient client = new OkHttpClient.Builder().addInterceptor(interceptor).build();
 
         retrofit = new Retrofit.Builder()
                 .client(client)
+                //change this url to your own proxy API url
                 .baseUrl("https://nexmo-verify.glitch.me")
                 .addConverterFactory(MoshiConverterFactory.create())
                 .build();

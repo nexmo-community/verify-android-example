@@ -40,8 +40,9 @@ public class PhoneNumberConfirmActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_phone_number_confirm);
-        SharedPreferences sharedPref = getSharedPreferences(TWO_FACTOR_AUTH, Context.MODE_PRIVATE);
 
+        //Get user's phone number and request id from SharedPreferences
+        SharedPreferences sharedPref = getSharedPreferences(TWO_FACTOR_AUTH, Context.MODE_PRIVATE);
         String phoneNumber = sharedPref.getString(PHONE_NUMBER, null);
         Log.d(TAG, "phone: " + phoneNumber);
         requestId = sharedPref.getString(phoneNumber, null);
@@ -73,7 +74,9 @@ public class PhoneNumberConfirmActivity extends AppCompatActivity {
 
 
     private void confirmCode(String code) {
+        //clear out the previous error (if any) that was shown.
         verifyTxt.setText(null);
+        //Confirm the verification code. Wrap `String code` and requestId in a `VerifyRequest` class so it is correctly serialized into JSON
         VerifyUtil.getInstance().getVerifyService().check(new VerifyRequest(code, requestId)).enqueue(new Callback<CheckVerifyResponse>() {
             @Override
             public void onResponse(Call<CheckVerifyResponse> call, Response<CheckVerifyResponse> response) {
@@ -81,13 +84,15 @@ public class PhoneNumberConfirmActivity extends AppCompatActivity {
                     verifyTxt.setText("Verified!");
                     Toast.makeText(PhoneNumberConfirmActivity.this, "Verified!", Toast.LENGTH_LONG).show();
                 } else {
+                    //if the HTTP response is 4XX, Retrofit doesn't pass the response to the `response.body();`
+                    //So we need to convert the `response.errorBody()` to a `CheckVerifyResponse`
                     Converter<ResponseBody, CheckVerifyResponse> errorConverter = VerifyUtil.getInstance().getRetrofit().responseBodyConverter(CheckVerifyResponse.class, new Annotation[0]);
                     try {
                         CheckVerifyResponse checkVerifyResponse = errorConverter.convert(response.errorBody());
                         verifyTxt.setText(checkVerifyResponse.getErrorText());
                         Toast.makeText(PhoneNumberConfirmActivity.this, "Error Will Robinson!", Toast.LENGTH_LONG).show();
                     } catch (IOException e) {
-                        e.printStackTrace();
+                        Log.e(TAG, "onResponse: ", e);
                     }
                 }
             }
@@ -101,7 +106,9 @@ public class PhoneNumberConfirmActivity extends AppCompatActivity {
     }
 
     private void cancelRequest() {
+        //clear out the previous error (if any) that was shown.
         verifyTxt.setText(null);
+        //Cancel the verification request
         VerifyUtil.getInstance().getVerifyService().cancel(new RequestId(requestId)).enqueue(new Callback<CancelVerifyResponse>() {
             @Override
             public void onResponse(Call<CancelVerifyResponse> call, Response<CancelVerifyResponse> response) {
@@ -109,13 +116,15 @@ public class PhoneNumberConfirmActivity extends AppCompatActivity {
                     Toast.makeText(PhoneNumberConfirmActivity.this, "Cancelled!", Toast.LENGTH_LONG).show();
                     finish();
                 } else {
+                    //if the HTTP response is 4XX, Retrofit doesn't pass the response to the `response.body();`
+                    //So we need to convert the `response.errorBody()` to a `CancelVerifyResponse`
                     Converter<ResponseBody, CancelVerifyResponse> errorConverter = VerifyUtil.getInstance().getRetrofit().responseBodyConverter(CancelVerifyResponse.class, new Annotation[0]);
                     try {
                         CancelVerifyResponse cancelVerifyResponse = errorConverter.convert(response.errorBody());
                         verifyTxt.setText(cancelVerifyResponse.getErrorText());
                         Toast.makeText(PhoneNumberConfirmActivity.this, "Error Will Robinson!", Toast.LENGTH_LONG).show();
                     } catch (IOException e) {
-                        e.printStackTrace();
+                        Log.e(TAG, "onResponse: ", e);
                     }
                 }
             }
