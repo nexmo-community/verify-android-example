@@ -1,6 +1,6 @@
 # Android demo app for Nexmo's Verify Two Factor Authentication API
 
-This is a companion demo to the blog post [Add Two Factor Authentication to Android apps with Nexmo's Verify API](https://www.nexmo.com/blog/2018/05/09/add-two-factor-authentication-to-android-apps-with-nexmos-verify-api-dr)
+This is a companion demo to the blog post [Add Two Factor Authentication to Android apps with Nexmo's Verify API](https://www.nexmo.com/blog/2018/05/10/add-two-factor-authentication-to-android-apps-with-nexmos-verify-api-dr/)
 
 ## Prerequisites
 
